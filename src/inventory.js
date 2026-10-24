@@ -7,22 +7,35 @@
  */
 export function isInventoryQuestion(question) {
     if (typeof question !== 'string') return false;
-    const text = question.toLowerCase().replace(/[’‘]/g, "'").replace(/[?.!,]+$/g, '').trim()
-        .replace(/^(?:please\s+|can you\s+|could you\s+|tell me\s+)+/, '').replace(/\s+/g, ' ');
-    const collection = '(?:(?:my|the|this|our) )?(?:archive|library)';
-    const records = '(?:documents|notes|entries|files|records|topics)';
+    const text = question.toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ').replace(/^[ ?.!,]+|[ ?.!,]+$/g, '')
+        .replace(/,? please$/, '').replace(/[ ?.!,]+$/g, '')
+        .replace(/^(?:(?:please|(?:can|could|would) you|tell me(?: (?:if|whether))?|(?:check|see|confirm)(?: to see)?(?: (?:if|whether))?),? )+/, '');
+    const collection = '(?:(?:my|the|this|our) )?(?:archive|library|collection)';
+    const records = '(?:documents|notes|entries|files|records|topics|items)';
+    const contents = `(?:anything|something|stuff|(?:any |some )?(?:saved |archived )?${records}|(?:any |some )?content)`;
+    const location = `(?: (?:in|inside) ${collection})?`;
+    const saved = '(?:saved|archived|recorded|stored|added|imported|uploaded)';
     return [
         `^what (?:does|do) ${collection} (?:contain|include|hold|have)$`,
         `^what ${collection} (?:contains|includes|holds|has)$`,
-        `^what(?: is|'s) (?:in|inside) ${collection}$`,
+        `^what(?: is|'s)(?: ${saved})? (?:in|inside) ${collection}$`,
         `^what (?:topics|subjects) (?:are covered by|are in) (?:the )?(?:saved documents|${collection})$`,
-        `^what ${records} (?:do (?:i|we) have|have (?:i|we) (?:saved|archived|recorded))$`,
-        '^what have (?:i|we) (?:saved|archived|recorded)(?: so far)?$',
+        `^what ${records} (?:do (?:i|we) have|have (?:i|we) ${saved})${location}$`,
+        `^what do (?:i|we) have(?: ${saved})?${location}$`,
+        `^what have (?:i|we) ${saved}(?: (?:in|into|to) ${collection})?(?: so far)?$`,
         `^(?:show|give)(?: me)? (?:an? )?(?:overview|summary|inventory|list|contents)(?: of| for)? ${collection}$`,
         `^(?:list|show)(?: me)?(?: all)? (?:my |the |saved )?${records}(?: in ${collection})?$`,
         `^(?:summari[sz]e|describe) ${collection}$`,
         `^how many ${records} (?:are (?:there )?in ${collection}|do (?:i|we) have|have (?:i|we) (?:saved|archived))$`,
         `^${collection} (?:overview|contents|inventory)$`,
+        // Existence checks use the index even when the generation model is off.
+        // Anchors preserve topic/date filters as passage searches.
+        `^(?:do (?:i|we)|(?:i|we)) have ${contents}(?: ${saved})?${location}(?: yet| so far)?$`,
+        `^(?:have (?:i|we)|(?:i|we) have) ${saved} ${contents}(?: (?:in|into|to) ${collection})?(?: yet| so far)?$`,
+        `^(?:(?:is|are) there|there (?:is|are)) ${contents}(?: ${saved})?${location}$`,
+        `^(?:does ${collection} (?:have|contain|include|hold)|${collection} (?:has|contains|includes|holds)) ${contents}$`,
+        `^(?:is ${collection}|${collection} is) (?:empty|not empty|nonempty)$`,
+        `^${contents}(?: ${saved})? (?:in|inside) ${collection}$`,
     ].some(pattern => new RegExp(pattern).test(text));
 }
 
