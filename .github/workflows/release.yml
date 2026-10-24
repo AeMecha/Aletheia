@@ -1,0 +1,107 @@
+name: Build and publish desktop release
+
+on:
+  push:
+    tags: ['v*']
+
+# Builds only read the repository. The publishing job receives write access to
+# this repository through GitHub's short-lived workflow token, not a personal key.
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win32
+            artifact: windows-x64
+            installer: dist/Aletheia-Setup-*.exe
+          - os: ubuntu-24.04
+            platform: linux
+            artifact: linux-amd64
+            installer: dist/Aletheia-*-linux-amd64.deb
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Verify the release tag matches package.json
+        run: node --input-type=module -e "import fs from 'node:fs'; if (process.env.GITHUB_REF_NAME !== 'v' + JSON.parse(fs.readFileSync('package.json')).version) throw new Error('Tag and application version differ.');"
+      - run: npm ci
+      # Lifecycle scripts are intentionally disabled by .npmrc.
+      - run: node node_modules/electron/install.js
+      - run: npm test
+      - name: Build the native installer
+        run: node scripts/build.js --platform ${{ matrix.platform }}
+      - name: Inspect the Debian package
+        if: runner.os == 'Linux'
+        run: node scripts/inspect-linux-package.js
+      - name: Check the installed Linux application
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ./dist/Aletheia-*-linux-amd64.deb xvfb
+          engine=/opt/Aletheia/resources/aletheia/runtime/cpu
+          LD_LIBRARY_PATH="$engine" "$engine/llama-server" --version
+          ALETHEIA_HOME="$(mktemp -d /tmp/aletheia-release-XXXXXX)" xvfb-run -a /opt/Aletheia/aletheia --verify-archive
+      - name: Check the packaged Windows application
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:ALETHEIA_HOME = Join-Path $env:RUNNER_TEMP 'aletheia-release-verify'
+          $stdout = Join-Path $env:RUNNER_TEMP 'aletheia-verify.log'
+          $stderr = Join-Path $env:RUNNER_TEMP 'aletheia-verify-error.log'
+          $process = Start-Process -FilePath '.\dist\win-unpacked\Aletheia.exe' -ArgumentList '--verify-archive' -RedirectStandardOutput $stdout -RedirectStandardError $stderr -WindowStyle Hidden -PassThru
+          if (-not $process.WaitForExit(120000)) { $process.Kill(); throw 'Packaged application verification timed out.' }
+          Get-Content $stdout
+          Get-Content $stderr
+          if ($null -ne $process.ExitCode -and $process.ExitCode -ne 0) { throw "Packaged application exited $($process.ExitCode)." }
+          $result = Get-Content (Join-Path $env:ALETHEIA_HOME 'packaged-verification.json') -Raw | ConvertFrom-Json
+          if (-not $result.passed) { throw 'Packaged application verification failed.' }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: aletheia-${{ matrix.artifact }}
+          path: ${{ matrix.installer }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: aletheia-*
+          path: release-assets
+          merge-multiple: true
+      - name: Create the source archive from the tagged commit
+        shell: bash
+        run: |
+          version=$(node -p 'JSON.parse(require("fs").readFileSync("package.json")).version')
+          git archive --format=zip --prefix="Aletheia-$version/" --output="release-assets/Aletheia-Source-$version.zip" HEAD
+      - name: Upload, verify and publish the release
+        run: node scripts/publish-release.js
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

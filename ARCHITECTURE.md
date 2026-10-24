@@ -34,6 +34,7 @@ flowchart LR
 | `packaging.cjs`, `scripts/build.js` | Select target-specific assets/dependencies and build Electron without mixing Windows and Linux native libraries. |
 | `scripts/package-linux.js` | Stream a Debian installer with Unix ownership, executable modes, system dependencies and a desktop launcher. |
 | `scripts/inspect-linux-package.js` | Independently read back the installer and check archive structure, native binaries, permissions and launcher. |
+| `.github/workflows/release.yml`, `scripts/publish-release.js` | Build/check native installers from a version tag, create corresponding source/checksums, verify uploaded assets and publish the completed draft release. |
 
 ## Archive overview versus topical search
 

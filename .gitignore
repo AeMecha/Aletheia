@@ -3,6 +3,7 @@ resources/
 build-cache/
 .build-cache/
 dist/
+release-assets/
 .local/
 test-output/
 *.log

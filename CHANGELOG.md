@@ -7,7 +7,8 @@
 - Offer useful next steps when topical search finds no matching passage.
 - Add explanatory source comments and an architecture guide.
 - Add Ubuntu 24.04+ and Debian 12+ x64 packaging, platform-specific CPU/Vulkan engines, native dependencies, desktop integration and sandbox setup.
-- Add regression and package integrity checks. Native Linux desktop execution remains unverified for this cross-built release.
+- Add regression and package integrity checks, plus native Windows/Ubuntu release builds with packaged-app checks.
+- Publish installers, corresponding source and verified checksums together through the release workflow.
 
 ## 0.1.1
 

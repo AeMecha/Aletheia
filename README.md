@@ -2,7 +2,9 @@
 
 A standalone Windows and Linux x64 personal knowledge library. Open Aletheia to use the Librarian, prepare documents with the Archivist, browse original Markdown, and run `qwen3.8-9b-hermes-fc-tooluse` locally. SillyTavern, Python, Node.js and LM Studio are not required by the installed app.
 
-This repository contains the application source. The build commands below create installers in `dist/`; generated binaries, user profiles and Qwen weights are excluded from Git.
+Download the installers from [GitHub Releases](https://github.com/AeMecha/Aletheia/releases): [Windows setup](https://github.com/AeMecha/Aletheia/releases/download/v0.1.2/Aletheia-Setup-0.1.2.exe) or [Ubuntu/Debian amd64](https://github.com/AeMecha/Aletheia/releases/download/v0.1.2/Aletheia-0.1.2-linux-amd64.deb). Each release includes the corresponding source archive and SHA-256 checksums.
+
+This repository contains the application source. The build commands below create installers in `dist/`; user profiles and Qwen weights are excluded from Git.
 
 ## Run the packaged app
 
@@ -26,7 +28,7 @@ Open **Aletheia** from the applications menu, or run `aletheia`. The installer s
 
 The package installs into `/opt/Aletheia` and preserves the Chromium sandbox. It includes an application-specific AppArmor profile for Ubuntu and the standard root-owned sandbox helper. Removal via `sudo apt remove aletheia` leaves the user's library, settings and models in place. ARM64 and older distributions are not included in this release.
 
-**Verification limit:** this release was cross-built on Windows. Its Debian archive, Linux x64 binaries, dependency selection, ownership, executable permissions and desktop launcher were checked; launching the app on an Ubuntu/Debian desktop still needs a native Linux check. The Windows app was exercised directly.
+**Release checks:** tagged builds run on Windows and Ubuntu. The Linux job installs the Debian package, starts the bundled CPU engine and checks archive/search operations through the packaged renderer. These checks use synthetic records without downloading Qwen; full Qwen generation on Linux still requires a real-model check. The Windows Qwen engine was tested locally with the exact model.
 
 ## Bring your archive
 
@@ -96,6 +98,10 @@ For the Electron UI check, set `ALETHEIA_UI_TEST=1` and `ALETHEIA_HOME` to a **n
 `node scripts/draft-smoke.js` checks short text, existing Markdown and a long note against the local engine using CPU mode. Add `--lmstudio http://127.0.0.1:1234/v1` to check an optional server. Synthetic response captures and results stay in `test-output/`.
 
 This repository contains the standalone desktop app. Legacy SillyTavern services, cards, chats and Binder files are not migrated or removed by building it.
+
+## Publish a release
+
+Update the version and release notes under `docs/releases/`, then push the matching `v<version>` tag. The release workflow tests and builds Windows and Ubuntu packages, checks the packaged applications, and creates a source ZIP from that exact commit. It uploads all assets to a draft, verifies their sizes and SHA-256 digests, and publishes the complete release. A repository-scoped GitHub Actions token handles publishing; a personal API token is not needed.
 
 ## License
 
