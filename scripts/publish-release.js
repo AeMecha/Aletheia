@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
+import { setTimeout as delay } from 'node:timers/promises';
 
 export async function assetPlan(directory, version) {
     if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('Expected a stable semantic version.');
@@ -64,7 +65,12 @@ async function publish() {
     let release = releases().find(item => item.tag_name === tag);
     if (!release) {
         gh(['release', 'create', tag, '--verify-tag', '--draft', '--title', `Aletheia ${version}`, '--notes-file', notes]);
-        release = releases().find(item => item.tag_name === tag);
+        // A newly created draft can take a moment to appear in the listing. A
+        // bounded read retry avoids abandoning verified artifacts in that gap.
+        for (let attempt = 0; attempt < 6 && !release; attempt++) {
+            release = releases().find(item => item.tag_name === tag);
+            if (!release && attempt < 5) await delay(1500);
+        }
     }
     if (!release) throw new Error('GitHub did not return the draft release.');
     if (release.draft) {

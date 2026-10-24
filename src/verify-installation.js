@@ -3,7 +3,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { MODEL_ID } from './config.js';
 
 export async function verifyInstallation(window, application, { archiveOnly = false } = {}) {
     if (!process.env.ALETHEIA_HOME) throw new Error('Installation verification requires an isolated ALETHEIA_HOME.');
@@ -18,14 +17,14 @@ export async function verifyInstallation(window, application, { archiveOnly = fa
         if (!inventory.answer.includes('contains 1 document.') || inventory.sources[0]?.id !== saved.id) throw new Error('Packaged archive inventory or IPC failed.');
     } else {
         await application.model.start();
-        if (application.model.state.phase !== 'ready') throw new Error('Configure the Qwen model in the isolated test profile.');
+        if (application.model.state.phase !== 'ready') throw new Error('Configure an AI model in the isolated test profile.');
         const raw = await application.model.complete({ messages: [{ role: 'system', content: 'Reply with exactly one JSON object: {"ready":true}.' }, { role: 'user', content: 'Verify the local installation.' }], max_tokens: 64, temperature: 0, reasoning_effort: 'none', tools: [], tool_choice: 'none', response_format: { type: 'json_schema', json_schema: { name: 'installation', strict: true, schema: { type: 'object', properties: { ready: { type: 'boolean', const: true } }, required: ['ready'], additionalProperties: false } } } });
-        if (raw.model !== MODEL_ID || JSON.parse(raw.choices?.[0]?.message?.content).ready !== true) throw new Error('The packaged Qwen engine did not answer correctly.');
+        if (JSON.parse(raw.choices?.[0]?.message?.content).ready !== true) throw new Error('The configured model did not answer correctly.');
     }
     await delay(300);
     const renderer = await window.webContents.executeJavaScript('({title:document.title, bridge:typeof window.aletheia.ask, node:typeof require})');
     if (renderer.title !== 'Aletheia' || renderer.bridge !== 'function' || renderer.node !== 'undefined') throw new Error('The packaged renderer or preload bridge did not initialize.');
-    fs.writeFileSync(path.join(application.home, 'packaged-verification.json'), JSON.stringify({ passed: true, model: archiveOnly ? 'not tested in archive-only mode' : MODEL_ID, engine: application.model.state, embeddings: embedding.length, renderer, inventory }, null, 2));
+    fs.writeFileSync(path.join(application.home, 'packaged-verification.json'), JSON.stringify({ passed: true, model: archiveOnly ? 'not tested in archive-only mode' : application.model.state.model, engine: application.model.state, embeddings: embedding.length, renderer, inventory }, null, 2));
     // Virtual displays can need a few frames before Chromium's compositor has a
     // capturable surface. Require an actual image while allowing that short delay.
     window.show();
@@ -39,5 +38,5 @@ export async function verifyInstallation(window, application, { archiveOnly = fa
         } catch (error) { if (attempt === 4) throw error; }
     }
     fs.writeFileSync(path.join(application.home, 'packaged-window.png'), screenshot.toPNG());
-    console.log(archiveOnly ? 'PASS: packaged archive inventory, native search model, SQLite library and isolated renderer.' : 'PASS: packaged executable, local Qwen engine, native search model, SQLite library and isolated renderer.');
+    console.log(archiveOnly ? 'PASS: packaged archive inventory, native search model, SQLite library and isolated renderer.' : 'PASS: packaged executable, configured AI model, native search model, SQLite library and isolated renderer.');
 }

@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { setTimeout as delay } from 'node:timers/promises';
+import http from 'node:http';
+import { once } from 'node:events';
 import { Config } from '../src/config.js';
 
 // Runs inside Electron against the real preload bridge and renderer, using a
@@ -68,16 +70,60 @@ export async function desktopSmoke(window, application) {
     assert.match(await script('document.getElementById("document-content").textContent'), /green barn/);
     await screenshot('renamed-document-dark');
     await script('document.getElementById("close-document").click(); document.querySelector(".nav-item[data-view=settings]").click()');
-    await script('document.querySelector("input[name=provider][value=lmstudio]").click()');
-    assert.equal(await script('document.getElementById("lmstudio-options").hidden'), false);
-    await screenshot('settings-lmstudio');
-    await script('document.getElementById("lmstudio-url").value = "http://example.test:1234/v1"');
+    await script('document.querySelector("input[name=provider][value=api]").click()');
+    assert.equal(await script('document.getElementById("api-options").hidden'), false);
+    await script('document.getElementById("api-preset").value = "ollama"; document.getElementById("api-preset").dispatchEvent(new Event("change"))');
+    assert.equal(await script('document.getElementById("api-url").value'), 'http://localhost:11434/v1');
+    assert.equal(await script('document.getElementById("api-model").value'), '');
+    await script('document.getElementById("response-mode").value = "prompt"; document.querySelector(".compatibility-options").open = true');
+    await screenshot('settings-api');
+    await script('document.getElementById("api-url").value = "http://example.test:1234/v1"; document.getElementById("api-model").value = "another-chat-model"');
     await script('document.getElementById("theme-toggle").click()');
     for (let attempt = 0; attempt < 100 && application.config.value.theme !== 'light'; attempt++) await delay(20);
     assert.equal(new Config(application.home).value.theme, 'light');
-    assert.equal(await script('document.getElementById("lmstudio-url").value'), 'http://example.test:1234/v1');
+    assert.equal(await script('document.getElementById("api-url").value'), 'http://example.test:1234/v1');
+    assert.equal(await script('document.getElementById("api-model").value'), 'another-chat-model');
+    assert.equal(await script('document.getElementById("response-mode").value'), 'prompt');
     await screenshot('settings-light');
+    // A local synthetic API exercises discovery, persisted selection, drafting
+    // and cited answers through the actual renderer -> IPC -> HTTP path. It has
+    // no connection to the user's model server and receives only our fixture.
+    const requests = [];
+    const server = http.createServer(async (request, reply) => {
+        reply.setHeader('Content-Type', 'application/json');
+        if (request.url === '/v1/models') { reply.end(JSON.stringify({ data: [{ id: 'test/other-instruct' }] })); return; }
+        let text = ''; for await (const chunk of request) text += chunk;
+        const body = JSON.parse(text); requests.push(body);
+        const input = JSON.parse(body.messages.at(-1).content);
+        const content = input.retrieval
+            ? { answer: 'The verification document mentions a green barn.', sources: [input.retrieval.documents[0].id] }
+            : { title: 'API verification', summary: 'This is a synthetic API document.', keywords: ['verification'], type: 'Observation' };
+        reply.end(JSON.stringify({ model: 'test/other-instruct-resolved', choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(content) } }] }));
+    });
+    server.listen(0, '127.0.0.1'); await once(server, 'listening');
+    try {
+        await script(`document.getElementById('api-url').value = 'http://127.0.0.1:${server.address().port}/v1'; document.getElementById('api-model').value = ''; document.getElementById('fetch-models').click()`);
+        for (let attempt = 0; attempt < 100 && await script('document.getElementById("api-model").value') !== 'test/other-instruct'; attempt++) await delay(50);
+        assert.equal(await script('document.getElementById("api-model").value'), 'test/other-instruct');
+        await script('document.getElementById("output-tokens").value = "4096"; document.getElementById("settings-form").requestSubmit()');
+        for (let attempt = 0; attempt < 100 && application.model.state.phase !== 'ready'; attempt++) await delay(50);
+        assert.equal(application.config.value.provider, 'api');
+        assert.equal(new Config(application.home).value.apiModel, 'test/other-instruct');
+        assert.equal(new Config(application.home).value.outputTokens, 4096);
+        assert.equal(application.model.state.phase, 'ready');
+        await script('document.querySelector(".nav-item[data-view=archivist]").click(); document.getElementById("create-draft").click()');
+        for (let attempt = 0; attempt < 100 && !(await script('document.getElementById("draft-input").value')); attempt++) await delay(50);
+        assert.match(await script('document.getElementById("draft-input").value'), /API verification/);
+        assert.match(await script('document.getElementById("draft-input").value'), /green barn/);
+        await script('document.querySelector(".nav-item[data-view=librarian]").click(); document.getElementById("question").value = "What do the notes say about the green barn?"; document.getElementById("question").dispatchEvent(new Event("input")); document.getElementById("ask-form").requestSubmit()');
+        for (let attempt = 0; attempt < 100 && application.chat.messages.length < 4; attempt++) await delay(50);
+        assert.equal(application.chat.messages.at(-1).sources[0].id, documentId);
+        assert.match(application.chat.messages.at(-1).content, /green barn/);
+        assert.equal(requests.length, 2);
+        assert.ok(requests.every(body => body.model === 'test/other-instruct' && body.max_tokens === 4096 && !('reasoning_effort' in body) && !('tools' in body) && !('response_format' in body)));
+        await screenshot('api-librarian');
+    } finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'verification.json'), JSON.stringify({ passed: true, checks: ['isolated preload', 'no renderer Node access', 'no decorative quotes', 'light and dark themes', 'theme persistence after reload', 'first-run setup', 'save as written', 'library listing', 'archive overview without a configured model', 'title edit with stable document ID', 'original document', 'optional LM Studio settings'], errors }, null, 2));
+    fs.writeFileSync(path.join(output, 'verification.json'), JSON.stringify({ passed: true, checks: ['isolated preload', 'no renderer Node access', 'no decorative quotes', 'light and dark themes', 'theme persistence after reload', 'first-run setup', 'save as written', 'library listing', 'archive overview without a configured model', 'title edit with stable document ID', 'original document', 'local GGUF and configurable API settings', 'API presets and model ID edits', 'model discovery through IPC and HTTP', 'API selection and response-budget persistence', 'API drafting with original text preserved', 'API Librarian answer with validated citations'], errors }, null, 2));
     console.log('PASS: desktop renderer and preload bridge. Screenshots: ' + output);
 }

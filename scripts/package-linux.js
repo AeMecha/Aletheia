@@ -145,7 +145,7 @@ Installed-Size: ${installedSize}
 Depends: libc6 (>= 2.36), libstdc++6 (>= 12), libgcc-s1, libgomp1, libssl3 (>= 3.0) | libssl3t64 (>= 3.0), libdbus-1-3, libexpat1, libudev1, libxkbcommon0, libglib2.0-0 | libglib2.0-0t64, libatspi2.0-0 | libatspi2.0-0t64, libgtk-3-0 | libgtk-3-0t64, libnss3, libnspr4, libatk1.0-0 | libatk1.0-0t64, libatk-bridge2.0-0 | libatk-bridge2.0-0t64, libdrm2, libx11-6, libxcb1, libxcomposite1, libxdamage1, libxext6, libxfixes3, libxrandr2, libgbm1, libasound2 | libasound2t64, libpango-1.0-0, libcairo2, libcups2 | libcups2t64
 Recommends: libvulkan1
 Description: A standalone local personal knowledge archive
- Run Qwen locally, prepare Markdown records, and search your own library.
+ Use local or API AI models, prepare Markdown records, and search your library.
  Supports an optional LM Studio connection. Model weights are selected or
  downloaded on first launch. Original documents stay in your user profile.
 `;

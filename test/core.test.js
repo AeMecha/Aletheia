@@ -155,7 +155,7 @@ test('Librarian requests isolate evidence; malformed output, fabricated dialogue
     const payload = librarianPayload('Trusted instructions', 'Any magic?', 'magic', retrieved);
     assert.deepEqual(payload.messages.map(message => message.role), ['system', 'user']);
     assert.doesNotMatch(payload.messages[0].content, /warlock is/);
-    assert.deepEqual(payload.tools, []);
+    assert.equal('tools' in payload, false); // Transport adapters add only supported options.
     const accepted = validateAnswer(raw({ answer: 'The archive includes a magic glossary.', sources: ['magic'] }), retrieved);
     assert.equal(accepted.sources[0].id, 'magic');
     for (const value of [
@@ -174,8 +174,8 @@ test('Librarian requests isolate evidence; malformed output, fabricated dialogue
 });
 
 test('settings accept optional LM Studio and reject invalid paths, protocols and context sizes', () => {
-    assert.equal(validateSettings({ ...defaults, provider: 'lmstudio', lmStudioUrl: 'http://127.0.0.1:1234/v1/' }).lmStudioUrl, 'http://127.0.0.1:1234/v1');
-    for (const patch of [{ provider: 'unknown' }, { lmStudioUrl: 'file:///tmp' }, { lmStudioUrl: 'http://user:secret@localhost/v1' }, { contextSize: 100 }, { modelPath: '../model.gguf' }]) assert.throws(() => validateSettings({ ...defaults, ...patch }));
+    assert.equal(validateSettings({ ...defaults, provider: 'lmstudio', lmStudioUrl: 'http://127.0.0.1:1234/v1/' }).apiUrl, 'http://127.0.0.1:1234/v1');
+    for (const patch of [{ provider: 'unknown' }, { apiUrl: 'file:///tmp' }, { apiUrl: 'http://user:secret@localhost/v1' }, { contextSize: 100 }, { modelPath: '../model.gguf' }]) assert.throws(() => validateSettings({ ...defaults, ...patch }));
 });
 
 test('Archivist validates metadata and retains the original text, including legitimate role labels and Markdown', () => {
@@ -267,17 +267,18 @@ test('model downloads resume partial data, verify checksums, and never publish c
     assert.equal(fs.existsSync(corrupt), false);
 });
 
-test('optional LM Studio uses the selected endpoint and rejects a different returned model', async () => {
+test('API connections request the selected model and accept server-resolved model aliases', async () => {
     const requests = [];
-    const config = { value: { ...defaults, provider: 'lmstudio', lmStudioUrl: 'http://example.test:1234/v1' } };
+    const config = { value: { ...defaults, provider: 'api', apiUrl: 'http://example.test:1234/v1', apiModel: 'my-instruction-model' } };
     const model = new Model(config, '.', { send: async (url, options) => {
         requests.push({ url, options });
         return new Response(JSON.stringify(url.endsWith('/models') ? { data: [{ id: 'qwen3.8-9b-hermes-fc-tooluse' }] } : { model: 'other-model', choices: [] }));
     } });
     await model.start();
     assert.equal(model.state.phase, 'ready');
-    await assert.rejects(model.complete({ messages: [{ role: 'user', content: 'Test' }], max_tokens: 100 }), /different model/);
+    assert.equal((await model.complete({ messages: [{ role: 'user', content: 'Test' }], max_tokens: 100 })).model, 'other-model');
     assert.equal(requests[1].url, 'http://example.test:1234/v1/chat/completions');
+    assert.equal(JSON.parse(requests[1].options.body).model, 'my-instruction-model');
     await model.stop();
 });
 

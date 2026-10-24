@@ -1,8 +1,8 @@
 {
   "name": "aletheia-desktop",
   "productName": "Aletheia",
-  "version": "0.1.2",
-  "description": "A local personal knowledge library with its own Qwen model engine.",
+  "version": "0.2.0",
+  "description": "A personal knowledge library with local GGUF models and configurable AI API connections.",
   "author": "Aletheia contributors",
   "license": "AGPL-3.0-only",
   "private": true,
