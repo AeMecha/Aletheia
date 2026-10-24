@@ -54,7 +54,9 @@ async function publish() {
     const tag = 'v' + version;
     const repository = process.env.GITHUB_REPOSITORY;
     if (!process.env.GH_TOKEN || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository || '')) throw new Error('Run publishing through the release workflow with its repository-scoped token.');
-    if (process.env.GITHUB_REF_NAME !== tag || !process.env.GITHUB_REF?.startsWith('refs/tags/')) throw new Error('The release must run from the matching version tag.');
+    const recovery = process.env.ALETHEIA_RELEASE_TAG === tag && /^\d+$/.test(process.env.ALETHEIA_BUILD_RUN_ID || '');
+    if (recovery) await import('./verify-release-build.js');
+    else if (process.env.GITHUB_REF_NAME !== tag || !process.env.GITHUB_REF?.startsWith('refs/tags/')) throw new Error('The release must run from the matching version tag.');
     const files = await assetPlan(path.resolve('release-assets'), version);
     const notes = path.join('docs', 'releases', tag + '.md');
     if (!fs.existsSync(notes)) throw new Error('Release notes are missing.');
