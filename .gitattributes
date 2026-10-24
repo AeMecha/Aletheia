@@ -1,0 +1,4 @@
+# Stable text line endings support native builds on Windows and Linux.
+* text=auto eol=lf
+*.png binary
+*.ico binary
