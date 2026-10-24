@@ -26,6 +26,18 @@ export async function verifyInstallation(window, application, { archiveOnly = fa
     const renderer = await window.webContents.executeJavaScript('({title:document.title, bridge:typeof window.aletheia.ask, node:typeof require})');
     if (renderer.title !== 'Aletheia' || renderer.bridge !== 'function' || renderer.node !== 'undefined') throw new Error('The packaged renderer or preload bridge did not initialize.');
     fs.writeFileSync(path.join(application.home, 'packaged-verification.json'), JSON.stringify({ passed: true, model: archiveOnly ? 'not tested in archive-only mode' : MODEL_ID, engine: application.model.state, embeddings: embedding.length, renderer, inventory }, null, 2));
-    fs.writeFileSync(path.join(application.home, 'packaged-window.png'), (await window.webContents.capturePage()).toPNG());
+    // Virtual displays can need a few frames before Chromium's compositor has a
+    // capturable surface. Require an actual image while allowing that short delay.
+    window.show();
+    let screenshot;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        await delay(500);
+        try {
+            screenshot = await window.webContents.capturePage(undefined, { stayAwake: true });
+            if (screenshot.isEmpty()) throw new Error('The packaged window capture is empty.');
+            break;
+        } catch (error) { if (attempt === 4) throw error; }
+    }
+    fs.writeFileSync(path.join(application.home, 'packaged-window.png'), screenshot.toPNG());
     console.log(archiveOnly ? 'PASS: packaged archive inventory, native search model, SQLite library and isolated renderer.' : 'PASS: packaged executable, local Qwen engine, native search model, SQLite library and isolated renderer.');
 }
