@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0
+
+- Accept compatible instruction/chat GGUF files instead of restricting selection to the default Qwen checksum.
+- Add configurable Chat Completions API connections with model IDs, optional model discovery, LM Studio/Ollama presets and local settings migration.
+- Add bounded schema/JSON/prompt response negotiation and an API output-token parameter choice while retaining all output and citation validation.
+- Use the selected model's name throughout the interface; keep the verified Qwen download as the default option.
+- Extend context choices and document model requirements, API compatibility and local/remote data behavior.
+- Add model migration, transport, local-runtime and full desktop API checks.
+
 ## 0.1.2
 
 - Answer broad archive questions using the full indexed inventory, including exact document totals, common metadata types/topics and real title examples with source links.

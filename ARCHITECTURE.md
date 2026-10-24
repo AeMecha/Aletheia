@@ -24,9 +24,10 @@ flowchart LR
 | `src/archive.js` | Maintain authoritative Markdown and a derived SQLite/FTS/vector index; preserve IDs; save and rename atomically. |
 | `src/inventory.js` | Recognize collection-wide questions and format real archive totals and bounded title examples. |
 | `src/embeddings.js` | Load local BGE q8 weights and split original text into token-bounded, overlapping passages. |
-| `src/model.js` | Start/stop an owned local engine, try GPU then CPU, or connect to optional LM Studio; enforce the model ID. |
+| `src/model.js` | Start/stop an owned local engine, try GPU then CPU, or connect to optional LM Studio; request the selected model ID and manage portable response formats. |
 | `src/runtime.js` | Select Windows/Linux executable names and the development/packaged runtime layout. |
 | `src/protocol.js` | Build bounded prompts and validate complete structured answers, source IDs and document metadata. |
+| `src/api.js`, `src/gguf.js` | Build portable Chat Completions requests, classify HTTP format errors, and validate user-selected GGUF containers. |
 | `src/config.js`, `src/download.js` | Validate/atomically persist preferences; resume and verify large downloads. |
 | `renderer/app.js` | Render text safely, preserve in-progress edits, manage controls, title dialogs and theme interactions. |
 | `renderer/theme.js`, `renderer/style.css` | Apply cached theme before first paint; define light/dark semantic colors. The saved main-process setting is authoritative. |
@@ -42,7 +43,7 @@ flowchart LR
 
 After refreshing the index, `Archive.inventory()` counts **all** indexed records in SQL. It groups document types, counts explicit metadata topic labels, and selects up to 12 recent title examples. `formatInventory()` turns those facts into a response with real source IDs. It does not ask the language model to guess counts or infer unseen topics. Empty archives receive a direct empty message. Index errors propagate instead of being mistaken for an empty collection.
 
-Topical questions follow the existing retrieval path: stemmed FTS and BGE cosine scores are fused, selected original passages are fitted to the context budget, and Qwen must return one complete JSON answer citing supplied source IDs. A topical no-match message offers a title/keyword retry or the archive overview. Retrieval never proves that an unreturned document does not exist.
+Topical questions follow the existing retrieval path: stemmed FTS and BGE cosine scores are fused, selected original passages are fitted to the context budget, and the selected AI must return one complete JSON answer citing supplied source IDs. A topical no-match message offers a title/keyword retry or the archive overview. Retrieval never proves that an unreturned document does not exist.
 
 ## Data and consistency
 
@@ -58,6 +59,18 @@ Development assets live under `resources/runtime/win32-x64/` and `resources/runt
 
 Linux dependencies are selected with npm's Linux/glibc target when cross-building. Native ONNX and sharp packages remain outside ASAR. The `.deb` installs application files as root under `/opt/Aletheia`, registers a launcher, and configures Chromium's sandbox. User archives/settings are stored separately in Electron's per-user config directory and are left in place on uninstall.
 
+## Model compatibility
+
+Qwen is the default downloadable model, not the identity of the application. `Config` migrates legacy `lmstudio` profiles to `api` and preserves their endpoint, credentials, selected file and theme. API settings include a model ID, response mode and output-limit parameter. Discovery uses unsaved connection fields and is optional; a missing `/models` route does not prevent manual-ID connections.
+
+The local engine exposes one application-owned alias (`aletheia-local`) for whichever GGUF was selected. The file header is checked before replacing a selection; llama.cpp checks architecture/tensors/chat-template compatibility during loading. The pinned default Qwen filename retains its verified no-thinking options. Other models use their own embedded chat template without that Qwen override. An unsupported architecture or insufficient memory produces a visible load error.
+
+External requests include only the model, messages, output limit, streaming disabled and the selected response format. No Qwen-specific reasoning or tool parameters are sent. The selected ID is always requested; versioned IDs returned by provider aliases are allowed. HTTP redirects are rejected so the configured credential is sent only to the chosen endpoint. The actual completion still passes the original structure, completion, tool-call and source-ID checks.
+
+Automatic format negotiation can advance from schema to JSON to prompt only after an explicit HTTP format rejection, or a local grammar/sampler initialization failure before generation. The successful mode is cached until reconnection. Prompt/JSON modes carry the full schema in trusted instructions. There is no retry for an authentication/quota failure or malformed completed answer. The Archivist's existing one-retry metadata-validation policy is separate; nothing is auto-saved. Context accounting includes the adapted messages on every attempt.
+
+Generation selection does not affect the BGE embeddings, chunking or index signature. Changing models therefore preserves archive retrieval and original Markdown.
+
 ## Verification
 
-`npm test` uses temporary profiles and deterministic fake embeddings/model responses for regression checks. `scripts/desktop-smoke.js` exercises the real renderer/preload in development, including an overview without a configured model. `--verify-archive` checks a packaged app with real local search in an empty isolated profile. `--verify-installation` additionally loads the configured Qwen model. Real-model smoke scripts use synthetic records and never the normal archive.
+`npm test` uses temporary profiles and deterministic fake embeddings/model responses for regression checks. `scripts/desktop-smoke.js` exercises the real renderer/preload in development, including an overview without a configured model. `--verify-archive` checks a packaged app with real local search in an empty isolated profile. `--verify-installation` additionally loads the configured AI model. Real-model smoke scripts use synthetic records and never the normal archive.

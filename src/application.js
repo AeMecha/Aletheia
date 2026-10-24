@@ -8,7 +8,8 @@ import { Config, atomicJson } from './config.js';
 import { Archive } from './archive.js';
 import { Embeddings } from './embeddings.js';
 import { Model } from './model.js';
-import { sha256, downloadVerified } from './download.js';
+import { downloadVerified } from './download.js';
+import { validateGguf } from './gguf.js';
 import { isInventoryQuestion, formatInventory } from './inventory.js';
 import { buildQuery, fitSources, librarianPayload, validateAnswer, fitDraftInput, validateDraft, NO_MATCH_ANSWER } from './protocol.js';
 
@@ -174,10 +175,9 @@ export class Application extends EventEmitter {
     }
     async selectModel(filename) {
         return this.exclusive(async signal => {
-            const expected = this.manifest.model;
-            if (!fs.existsSync(filename) || fs.statSync(filename).size !== expected.size) throw new Error(`Choose ${expected.filename}. This app is configured for your existing Q4_K_S model.`);
-            this.progress = { phase: 'verifying', message: 'Verifying your Qwen model…' }; this.publish();
-            if (await sha256(filename) !== expected.sha256) throw new Error('This file does not match the verified Qwen Q4_K_S model.');
+            // User-selected GGUF files need not match the default download hash.
+            // Validate the container; the engine reports unsupported architectures.
+            validateGguf(filename);
             signal.throwIfAborted();
             await this.model.stop();
             this.config.save({ ...this.config.value, provider: 'embedded', modelPath: filename });

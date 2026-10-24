@@ -65,11 +65,12 @@ else {
         handle('cancel', () => application.cancel());
         handle('settings', settings => application.settings(settings));
         handle('connect', () => application.model.start());
+        handle('models', connection => application.model.models(connection));
         handle('downloadModel', () => application.downloadModel());
         handle('document', id => { application.requireArchive(); if (typeof id !== 'string' || id.length > 512) throw new Error('Invalid document ID.'); return application.archive.get(id); });
         handle('refresh', () => { application.requireArchive(); return application.refresh(); });
         handle('chooseModel', async () => {
-            const result = await dialog.showOpenDialog(window, { title: 'Choose your Qwen Q4_K_S model', properties: ['openFile'], filters: [{ name: 'GGUF model', extensions: ['gguf'] }] });
+            const result = await dialog.showOpenDialog(window, { title: 'Choose an instruction/chat GGUF model', properties: ['openFile'], filters: [{ name: 'GGUF model', extensions: ['gguf'] }] });
             return result.canceled ? null : application.selectModel(result.filePaths[0]);
         });
         handle('import', async folder => {

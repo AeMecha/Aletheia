@@ -42,7 +42,7 @@ function updateControls() {
     const busy = uiBusy || state?.busy;
     const ready = state?.model.phase === 'ready';
     const libraryReady = state?.library.phase === 'ready';
-    for (const id of ['new-chat', 'save-settings', 'reconnect', 'import-files', 'import-folder', 'refresh-library']) $(id).disabled = Boolean(busy);
+    for (const id of ['new-chat', 'save-settings', 'reconnect', 'fetch-models', 'import-files', 'import-folder', 'refresh-library']) $(id).disabled = Boolean(busy);
     for (const button of document.querySelectorAll('.choose-model,.download-model')) button.disabled = Boolean(busy);
     $('ask-button').disabled = Boolean(busy || !ready || !libraryReady || !$('question').value.trim());
     $('create-draft').disabled = Boolean(busy || !ready || !$('archive-input').value.trim());
@@ -102,9 +102,10 @@ function renderDocuments(force = false) {
     }
 }
 function providerFields() {
-    const embedded = document.querySelector('input[name=provider]:checked')?.value !== 'lmstudio';
+    const embedded = document.querySelector('input[name=provider]:checked')?.value !== 'api';
     $('embedded-options').hidden = !embedded;
-    $('lmstudio-options').hidden = embedded;
+    $('api-options').hidden = embedded;
+    $('api-token-options').hidden = embedded;
 }
 function renderSettings() {
     // State events must not overwrite connection fields the user is still editing.
@@ -115,7 +116,12 @@ function renderSettings() {
     document.querySelector(`input[name=provider][value=${state.settings.provider}]`).checked = true;
     $('gpu').value = state.settings.gpu;
     $('context-size').value = state.settings.contextSize;
-    $('lmstudio-url').value = state.settings.lmStudioUrl;
+    $('api-url').value = state.settings.apiUrl;
+    $('api-model').value = state.settings.apiModel;
+    $('response-mode').value = state.settings.responseMode;
+    $('token-limit-field').value = state.settings.tokenLimitField;
+    $('output-tokens').value = state.settings.outputTokens;
+    $('api-preset').value = state.settings.apiUrl === 'http://127.0.0.1:1234/v1' ? 'lmstudio' : state.settings.apiUrl === 'http://localhost:11434/v1' ? 'ollama' : 'custom';
     $('api-key').value = state.settings.apiKey;
     $('auto-start').checked = state.settings.autoStart;
     $('model-path').textContent = state.settings.modelPath || 'No model selected';
@@ -129,7 +135,8 @@ function render(value) {
     const setup = state.settings.provider === 'embedded' && !state.settings.modelPath;
     document.body.classList.toggle('needs-setup', setup);
     $('setup-banner').hidden = !setup || ['library', 'settings'].includes(activeView);
-    $('engine-label').textContent = model.phase === 'ready' ? (state.settings.provider === 'embedded' ? 'Qwen · on this computer' : 'Qwen · LM Studio') : ({ loading: 'Loading Qwen…', error: 'Connection needs attention', setup: 'Set up your AI', stopped: 'AI not loaded' }[model.phase] || 'Getting ready');
+    $('engine-label').textContent = model.phase === 'ready' ? (model.model || 'Your AI') + (state.settings.provider === 'embedded' ? ' · local' : ' · API') : ({ loading: 'Connecting to your AI…', error: 'Connection needs attention', setup: 'Set up your AI', stopped: 'AI not loaded' }[model.phase] || 'Getting ready');
+    $('engine-chip').title = model.message;
     for (const id of ['engine-dot', 'sidebar-dot']) $(id).className = 'status-dot ' + model.phase;
     $('sidebar-status').textContent = state.library.phase === 'error' ? 'Library needs attention' : model.phase === 'ready' ? 'Your AI is ready' : model.phase === 'loading' ? 'Loading your AI' : 'Your library stays local';
     $('nav-count').textContent = state.library.count ?? state.documents.length;
@@ -184,7 +191,29 @@ $('library-filter').addEventListener('input', () => renderDocuments(true));
 document.querySelectorAll('.choose-model').forEach(button => button.addEventListener('click', () => run(async () => { const result = await api.chooseModel(); if (result) render(result); })));
 document.querySelectorAll('.download-model').forEach(button => button.addEventListener('click', () => run(async () => render(await api.downloadModel()))));
 document.querySelectorAll('input[name=provider]').forEach(input => input.addEventListener('change', providerFields));
-$('settings-form').addEventListener('submit', event => { event.preventDefault(); run(async () => render(await api.settings({ ...state.settings, provider: document.querySelector('input[name=provider]:checked').value, contextSize: Number($('context-size').value), gpu: $('gpu').value, lmStudioUrl: $('lmstudio-url').value, apiKey: $('api-key').value, autoStart: $('auto-start').checked }))); });
+$('api-preset').addEventListener('change', () => {
+    const address = { lmstudio: 'http://127.0.0.1:1234/v1', ollama: 'http://localhost:11434/v1' }[$('api-preset').value];
+    if (address) $('api-url').value = address;
+    // Credentials and model catalogs belong to one server, not the next preset.
+    $('api-key').value = ''; $('api-model').value = ''; clearModelSuggestions();
+});
+function clearModelSuggestions() { $('available-models').replaceChildren(); $('models-status').textContent = ''; }
+$('api-url').addEventListener('input', () => { $('api-preset').value = 'custom'; clearModelSuggestions(); });
+$('api-key').addEventListener('input', clearModelSuggestions);
+$('fetch-models').addEventListener('click', () => run(async () => {
+    clearModelSuggestions();
+    const connection = { apiUrl: $('api-url').value, apiKey: $('api-key').value };
+    $('models-status').textContent = 'Fetching models…';
+    try {
+        const models = await api.models(connection);
+        // Ignore a list if the user edited its server while the request ran.
+        if (connection.apiUrl !== $('api-url').value || connection.apiKey !== $('api-key').value) return;
+        for (const id of models) { const option = document.createElement('option'); option.value = id; $('available-models').append(option); }
+        if (models.length === 1 && !$('api-model').value.trim()) $('api-model').value = models[0];
+        $('models-status').textContent = models.length ? `${models.length} model${models.length === 1 ? '' : 's'} available. Choose or enter an ID.` : 'No models listed. Enter an ID manually.';
+    } catch (error) { $('models-status').textContent = 'Enter the model ID manually if discovery is unavailable.'; throw error; }
+}));
+$('settings-form').addEventListener('submit', event => { event.preventDefault(); run(async () => render(await api.settings({ ...state.settings, provider: document.querySelector('input[name=provider]:checked').value, contextSize: Number($('context-size').value), gpu: $('gpu').value, outputTokens: Number($('output-tokens').value), apiUrl: $('api-url').value, apiModel: $('api-model').value, apiKey: $('api-key').value, responseMode: $('response-mode').value, tokenLimitField: $('token-limit-field').value, autoStart: $('auto-start').checked }))); });
 $('reconnect').addEventListener('click', () => run(() => api.connect()));
 $('close-document').addEventListener('click', () => $('document-dialog').close());
 $('document-dialog').addEventListener('click', event => { if (event.target === $('document-dialog')) { const bounds = event.target.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) event.target.close(); } });

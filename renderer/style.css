@@ -184,3 +184,10 @@ input[type=text]{border:1px solid var(--line);background:var(--input);border-rad
 #title-error{color:var(--error);font-size:12px;line-height:1.5}
 #document-title{overflow-wrap:anywhere}
 button,textarea,input,select{color-scheme:inherit}
+.engine-chip{max-width:48%;min-width:0}
+#engine-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.field-hint{line-height:1.7}
+.compatibility-options{margin-top:22px;padding:15px;border:1px solid var(--line);border-radius:6px}
+.compatibility-options summary{cursor:pointer;font-size:12px;color:var(--muted)}
+#models-status{font-size:10px;line-height:1.6}
+#api-options .button-row{margin-top:12px}
