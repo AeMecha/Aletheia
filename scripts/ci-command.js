@@ -10,11 +10,16 @@ function capture(chunk, output) { output.write(chunk); tail = (tail + chunk.toSt
 child.stdout.on('data', chunk => capture(chunk, process.stdout));
 child.stderr.on('data', chunk => capture(chunk, process.stderr));
 function annotate(message) {
-    const clean = message.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '').replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
-    console.log('::error title=Release build command failed::' + clean);
+    const clean = message.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+    // Individual annotations are truncated at 4096 characters. Split the tail so
+    // the final exception cannot be hidden by package installation output.
+    for (let offset = 0; offset < clean.length; offset += 2000) {
+        const part = clean.slice(offset, offset + 2000).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+        console.log('::error title=Release build command failed::' + part);
+    }
 }
 child.on('error', error => { annotate(error.message); process.exitCode = 1; });
 child.on('close', code => {
     if (code !== 0) annotate(tail);
-    process.exitCode = code || process.exitCode || 0;
+    process.exitCode = code === 0 ? 0 : Number.isInteger(code) ? code : 1;
 });

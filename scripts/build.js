@@ -41,5 +41,7 @@ config.directories.output = path.join(root, 'dist');
 config.win.icon = path.join(root, config.win.icon);
 config.linux.icon = path.join(root, config.linux.icon);
 const target = platform === 'linux' ? Platform.LINUX : Platform.WINDOWS;
-await build({ projectDir: root, targets: target.createTarget(platform === 'linux' || process.argv.includes('--dir') ? ['dir'] : ['nsis'], Arch.x64), config });
+// electron-builder otherwise tries to publish automatically on tagged CI runs.
+// Only the separate release job may upload after both platforms are verified.
+await build({ projectDir: root, targets: target.createTarget(platform === 'linux' || process.argv.includes('--dir') ? ['dir'] : ['nsis'], Arch.x64), config, publish: 'never' });
 if (platform === 'linux' && !process.argv.includes('--dir')) await packageDebian(root);
