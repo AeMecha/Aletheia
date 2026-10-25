@@ -2,10 +2,15 @@
 // mode checks native search and real IPC without downloading the 5.5 GB GGUF.
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 
 export async function verifyInstallation(window, application, { archiveOnly = false } = {}) {
     if (!process.env.ALETHEIA_HOME) throw new Error('Installation verification requires an isolated ALETHEIA_HOME.');
+    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+    const originalLicense = fs.readFileSync(path.join(root, 'LICENSES', 'LicenseRef-AdeptTel1-Aletheia.txt'));
+    if (createHash('sha256').update(originalLicense).digest('hex') !== '4499fd097ee95e3b0cfdd5cd852156f2ab57fcb2fb9824453729884d2d4e7416') throw new Error('The packaged original-author license is missing or altered.');
     const embedding = await application.embedder.embed('Aletheia installation verification.');
     if (embedding.length !== 384) throw new Error('The packaged search model did not return 384 dimensions.');
     let inventory;
@@ -23,7 +28,7 @@ export async function verifyInstallation(window, application, { archiveOnly = fa
     }
     await delay(300);
     const renderer = await window.webContents.executeJavaScript('({title:document.title, bridge:typeof window.aletheia.ask, node:typeof require})');
-    if (renderer.title !== 'Aletheia' || renderer.bridge !== 'function' || renderer.node !== 'undefined') throw new Error('The packaged renderer or preload bridge did not initialize.');
+    if (renderer.title !== 'Aletheia Scriptorium' || renderer.bridge !== 'function' || renderer.node !== 'undefined') throw new Error('The packaged renderer or preload bridge did not initialize.');
     fs.writeFileSync(path.join(application.home, 'packaged-verification.json'), JSON.stringify({ passed: true, model: archiveOnly ? 'not tested in archive-only mode' : application.model.state.model, engine: application.model.state, embeddings: embedding.length, renderer, inventory }, null, 2));
     // Virtual displays can need a few frames before Chromium's compositor has a
     // capturable surface. Require an actual image while allowing that short delay.

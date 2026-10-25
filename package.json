@@ -1,10 +1,10 @@
 {
-  "name": "aletheia-desktop",
-  "productName": "Aletheia",
+  "name": "aletheia-scriptorium",
+  "productName": "Aletheia Scriptorium",
   "version": "0.2.1",
   "description": "A personal knowledge library with local GGUF models and configurable AI API connections.",
   "author": "Aletheia contributors",
-  "license": "AGPL-3.0-only",
+  "license": "SEE LICENSE IN LICENSE",
   "private": true,
   "type": "module",
   "main": "src/main.js",
@@ -31,10 +31,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/AeMecha/Aletheia.git"
+    "url": "git+ssh://git@github.com/AeMecha/Aletheia-Scriptorium.git"
   },
   "bugs": {
-    "url": "https://github.com/AeMecha/Aletheia/issues"
+    "url": "https://github.com/AeMecha/Aletheia-Scriptorium/issues"
   },
-  "homepage": "https://github.com/AeMecha/Aletheia#readme"
+  "homepage": "https://github.com/AeMecha/Aletheia-Scriptorium#readme"
 }

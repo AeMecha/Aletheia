@@ -1,3 +1,5 @@
+/** Binder workflow provenance: https://github.com/AdeptTel1/Aletheia by Adeptus Telvannus.
+ * Covered upstream material retains the custom terms in LICENSES/LicenseRef-AdeptTel1-Aletheia.txt; see ATTRIBUTION.md. */
 /** Markdown is authoritative; SQLite/FTS/vectors are derived. A shared queue
  * serializes index work. Stable IDs keep citations valid after title edits. */
 import fs from 'node:fs';

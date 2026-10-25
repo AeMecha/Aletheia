@@ -121,7 +121,7 @@ export async function packageDebian(root) {
     fs.mkdirSync(cache, { recursive: true });
     const data = path.join(cache, 'data.tar.gz');
     const control = path.join(cache, 'control.tar.gz');
-    const desktop = '[Desktop Entry]\nType=Application\nName=Aletheia\nComment=Your local knowledge archive\nExec=/opt/Aletheia/aletheia\nIcon=aletheia\nTerminal=false\nCategories=Office;Utility;\nStartupWMClass=Aletheia\n';
+    const desktop = '[Desktop Entry]\nType=Application\nName=Aletheia Scriptorium\nComment=Your local knowledge archive\nExec=/opt/Aletheia/aletheia\nIcon=aletheia\nTerminal=false\nCategories=Office;Utility;\nStartupWMClass=Aletheia Scriptorium\n';
     const profile = 'abi <abi/4.0>,\ninclude <tunables/global>\nprofile aletheia /opt/Aletheia/aletheia flags=(unconfined) {\n  userns,\n  include if exists <local/aletheia>\n}\n';
     const parents = ['.', './opt', './usr', './usr/bin', './usr/share', './usr/share/applications', './usr/share/icons', './usr/share/icons/hicolor', './usr/share/icons/hicolor/256x256', './usr/share/icons/hicolor/256x256/apps', './usr/share/doc', './usr/share/doc/aletheia', './etc', './etc/apparmor.d'];
     const entries = [...parents.map(name => ({ name, type: 'directory', mode: 0o755 })), ...tree(directory, './opt/Aletheia'),
@@ -131,6 +131,12 @@ export async function packageDebian(root) {
         { name: './opt/Aletheia/resources/apparmor-profile', content: profile, mode: 0o644 },
         { name: './usr/share/doc/aletheia/copyright', filename: path.join(root, 'LICENSE'), size: fs.statSync(path.join(root, 'LICENSE')).size, mode: 0o644 },
     ];
+    // Keep the original author's full terms accessible outside Electron's ASAR.
+    for (const name of ['NOTICE', 'LICENSING.md', 'ATTRIBUTION.md', 'UPSTREAM-PROVENANCE.json']) {
+        const filename = path.join(root, name);
+        entries.push({ name: './usr/share/doc/aletheia/' + name, filename, size: fs.statSync(filename).size, mode: 0o644 });
+    }
+    entries.push(...tree(path.join(root, 'LICENSES'), './usr/share/doc/aletheia/LICENSES'));
     await writeTarGz(data, entries);
     const installedSize = Math.ceil(entries.reduce((sum, entry) => sum + (entry.size || Buffer.byteLength(entry.content || '')), 0) / 1024);
     // Both libasound names are accepted across Ubuntu's t64 transition. Vulkan

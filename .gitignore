@@ -7,6 +7,8 @@ release-assets/
 .local/
 test-output/
 *.log
+__pycache__/
+*.py[cod]
 
 # Keep local credentials, user documents and model weights out of Git.
 .env

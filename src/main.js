@@ -7,10 +7,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Application } from './application.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-app.setName('Aletheia');
+app.setName('Aletheia Scriptorium');
 if (process.platform === 'win32') app.setAppUserModelId('app.aletheia.library');
-const home = process.env.ALETHEIA_HOME ? path.resolve(process.env.ALETHEIA_HOME) : app.getPath('userData');
-if (process.env.ALETHEIA_HOME) app.setPath('userData', home);
+// The new display name must not move existing archives into a fresh profile.
+const home = process.env.ALETHEIA_HOME ? path.resolve(process.env.ALETHEIA_HOME) : path.join(app.getPath('appData'), 'Aletheia');
+app.setPath('userData', home);
 const resources = app.isPackaged ? path.join(process.resourcesPath, 'aletheia') : path.join(root, 'resources');
 const indexUrl = pathToFileURL(path.join(root, 'renderer', 'index.html')).href;
 let window;
@@ -35,7 +36,7 @@ function* importPaths(directory) {
 }
 function createWindow() {
     nativeTheme.themeSource = application.config.value.theme;
-    window = new BrowserWindow({ title: 'Aletheia', width: 1280, height: 880, minWidth: 940, minHeight: 680, backgroundColor: application.config.value.theme === 'dark' ? '#171e1b' : '#f7f5f0', show: false, autoHideMenuBar: true,
+    window = new BrowserWindow({ title: 'Aletheia Scriptorium', width: 1280, height: 880, minWidth: 940, minHeight: 680, backgroundColor: application.config.value.theme === 'dark' ? '#171e1b' : '#f7f5f0', show: false, autoHideMenuBar: true,
         webPreferences: { preload: path.join(root, 'src', 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: true } });
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     window.webContents.on('render-process-gone', (_event, details) => { console.error('Desktop renderer stopped:', details.reason); });

@@ -74,3 +74,7 @@ Generation selection does not affect the BGE embeddings, chunking or index signa
 ## Verification
 
 `npm test` uses temporary profiles and deterministic fake embeddings/model responses for regression checks. `scripts/desktop-smoke.js` exercises the real renderer/preload in development, including an overview without a configured model. `--verify-archive` checks a packaged app with real local search in an empty isolated profile. `--verify-installation` additionally loads the configured AI model. Real-model smoke scripts use synthetic records and never the normal archive.
+
+## Original project and license scope
+
+The upstream Archivist/Binder/Librarian workflow and covered prompts originate in [Adeptus Telvannus’s Aletheia](https://github.com/AdeptTel1/Aletheia). See ATTRIBUTION.md for material changes, UPSTREAM-PROVENANCE.json for source hashes, and LICENSING.md for the custom upstream terms and separate contribution/dependency licenses. The framework/implementation lineage does not replace original-author attribution.
