@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Answer ordinary library existence questions, including "Do I have anything in the library?" and "Can you check if I have anything in the collection?", from the complete archive inventory.
+- Recognize conversational wrappers, collection synonyms and empty-library checks while preserving topic and date filters as document searches.
+- Allow chat inventory questions without a loaded generation model.
+- Add regression checks for empty and populated archives, external file changes and source links.
+
 ## 0.2.0
 
 - Accept compatible instruction/chat GGUF files instead of restricting selection to the default Qwen checksum.

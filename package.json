@@ -1,7 +1,7 @@
 {
   "name": "aletheia-desktop",
   "productName": "Aletheia",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A personal knowledge library with local GGUF models and configurable AI API connections.",
   "author": "Aletheia contributors",
   "license": "AGPL-3.0-only",
