@@ -1,6 +1,6 @@
 # Third-party components
 
-Aletheia is distributed under AGPL-3.0-only. Its Librarian protocol and prompts were adapted from the local Aletheia integration in SillyTavern. See LICENSE for the license text.
+Aletheia Scriptorium includes original/adapted material from [Aletheia](https://github.com/AdeptTel1/Aletheia) by **Adeptus Telvannus (AdeptTel1)**. That covered material retains the [original custom license](LICENSES/LicenseRef-AdeptTel1-Aletheia.txt); it is not relicensed under the AGPL. See LICENSE, LICENSING.md, NOTICE and ATTRIBUTION.md for scope, provenance and material changes. The AGPL text retained for separately authored contributions is in LICENSES/AGPL-3.0-only.txt. Other components retain the following notices.
 
 The installer includes Electron (MIT), llama.cpp (MIT), Transformers.js (Apache-2.0), ONNX Runtime (MIT), and the ONNX conversion of BAAI/bge-small-en-v1.5 (MIT). Their notices and license files are retained in the dependency and resource directories. See https://github.com/electron/electron, https://github.com/ggml-org/llama.cpp, https://github.com/huggingface/transformers.js, https://github.com/microsoft/onnxruntime, and https://huggingface.co/BAAI/bge-small-en-v1.5.
 

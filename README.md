@@ -1,8 +1,10 @@
-# Aletheia desktop
+# Aletheia Scriptorium
+
+**Origins:** Aletheia Scriptorium is an independently maintained derivative of **[Aletheia](https://github.com/AdeptTel1/Aletheia)** by **[Adeptus Telvannus (AdeptTel1)](https://github.com/AdeptTel1)**. The original Archivist/Librarian prompts and Binder workflow are credited to that project. Its covered material retains the [original custom license](LICENSES/LicenseRef-AdeptTel1-Aletheia.txt); this distribution is **not AGPL-only**. See [ATTRIBUTION.md](ATTRIBUTION.md) for material changes and [LICENSING.md](LICENSING.md) for license scope.
 
 A standalone Windows and Linux x64 personal knowledge library. Open Aletheia to use the Librarian, prepare documents with the Archivist, browse original Markdown, and use a compatible local AI model or a Chat Completions API. The default model download is `qwen3.8-9b-hermes-fc-tooluse`. SillyTavern, Python, Node.js and LM Studio are not required by the installed app.
 
-Download the installers from [GitHub Releases](https://github.com/AeMecha/Aletheia/releases): [Windows setup](https://github.com/AeMecha/Aletheia/releases/download/v0.2.1/Aletheia-Setup-0.2.1.exe) or [Ubuntu/Debian amd64](https://github.com/AeMecha/Aletheia/releases/download/v0.2.1/Aletheia-0.2.1-linux-amd64.deb). Each release includes the corresponding source archive and SHA-256 checksums.
+Download the installers from [GitHub Releases](https://github.com/AeMecha/Aletheia-Scriptorium/releases): [Windows setup](https://github.com/AeMecha/Aletheia-Scriptorium/releases/download/v0.2.1/Aletheia-Setup-0.2.1.exe) or [Ubuntu/Debian amd64](https://github.com/AeMecha/Aletheia-Scriptorium/releases/download/v0.2.1/Aletheia-0.2.1-linux-amd64.deb). Each release includes the corresponding source archive and SHA-256 checksums.
 
 This repository contains the application source. The build commands below create installers in `dist/`; user profiles and Qwen weights are excluded from Git.
 
@@ -36,7 +38,7 @@ The Linux build targets **Ubuntu 24.04+ or Debian 12+, x64/amd64** with a deskto
 sudo apt install ./Aletheia-0.2.1-linux-amd64.deb
 ```
 
-Open **Aletheia** from the applications menu, or run `aletheia`. The installer supplies the desktop app, native search libraries, and both Linux inference engines. Apt installs system desktop libraries if needed. Choose a compatible GGUF, download the default Qwen, or configure an API on first launch. The model and archive do not have to live inside the installation directory.
+Open **Aletheia Scriptorium** from the applications menu, or run `aletheia`. The installer supplies the desktop app, native search libraries, and both Linux inference engines. Apt installs system desktop libraries if needed. Choose a compatible GGUF, download the default Qwen, or configure an API on first launch. The model and archive do not have to live inside the installation directory.
 
 The package installs into `/opt/Aletheia` and preserves the Chromium sandbox. It includes an application-specific AppArmor profile for Ubuntu and the standard root-owned sandbox helper. Removal via `sudo apt remove aletheia` leaves the user's library, settings and models in place. ARM64 and older distributions are not included in this release.
 
@@ -63,8 +65,8 @@ Requires Windows or Linux x64, Node.js 24+, npm, and internet access for depende
 Clone the repository and enter its root directory:
 
 ```sh
-git clone git@github.com:AeMecha/Aletheia.git
-cd Aletheia
+git clone git@github.com:AeMecha/Aletheia-Scriptorium.git
+cd Aletheia-Scriptorium
 ```
 
 Then, on Windows:
@@ -117,4 +119,6 @@ Update the version and release notes under `docs/releases/`, then push the match
 
 ## License
 
-Aletheia is licensed under [AGPL-3.0-only](LICENSE), retaining the license used by the adapted integration. See [NOTICE](NOTICE) for attribution and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for dependency and model licenses. Release history is in [CHANGELOG.md](CHANGELOG.md).
+Original Aletheia material retains Adeptus Telvannus’s custom license. Separately authored application contributions retain their stated terms; read [LICENSE](LICENSE) and [LICENSING.md](LICENSING.md). See [NOTICE](NOTICE) for attribution and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for dependency and model licenses. Release history is in [CHANGELOG.md](CHANGELOG.md).
+
+The desktop application/repository is now named **Aletheia Scriptorium**. Existing released files, the `aletheia` command, application identifiers and the `Aletheia` profile directory retain their compatibility names. Historical release pages include corrected upstream notices; existing installer/source bytes are unchanged. The current source uses the new display name.

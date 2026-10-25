@@ -25,7 +25,7 @@ const config = packaging(platform);
 if (platform === 'linux' && process.platform !== 'linux') {
     const stage = path.join(root, 'build-cache', 'linux-app');
     fs.mkdirSync(stage, { recursive: true });
-    for (const name of ['src', 'renderer', 'prompts', 'assets.json', 'LICENSE', 'NOTICE', 'THIRD-PARTY-NOTICES.md', 'package.json', 'package-lock.json']) {
+    for (const name of ['src', 'renderer', 'prompts', 'assets.json', 'LICENSE', 'LICENSES', 'NOTICE', 'LICENSING.md', 'ATTRIBUTION.md', 'UPSTREAM-PROVENANCE.json', 'THIRD-PARTY-NOTICES.md', 'package.json', 'package-lock.json']) {
         fs.cpSync(path.join(root, name), path.join(stage, name), { recursive: true });
     }
     // Invoke npm's JS entry directly on Windows; .cmd cannot be spawned without
