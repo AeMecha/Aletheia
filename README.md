@@ -2,13 +2,13 @@
 
 A standalone Windows and Linux x64 personal knowledge library. Open Aletheia to use the Librarian, prepare documents with the Archivist, browse original Markdown, and use a compatible local AI model or a Chat Completions API. The default model download is `qwen3.8-9b-hermes-fc-tooluse`. SillyTavern, Python, Node.js and LM Studio are not required by the installed app.
 
-Download the installers from [GitHub Releases](https://github.com/AeMecha/Aletheia/releases): [Windows setup](https://github.com/AeMecha/Aletheia/releases/download/v0.2.0/Aletheia-Setup-0.2.0.exe) or [Ubuntu/Debian amd64](https://github.com/AeMecha/Aletheia/releases/download/v0.2.0/Aletheia-0.2.0-linux-amd64.deb). Each release includes the corresponding source archive and SHA-256 checksums.
+Download the installers from [GitHub Releases](https://github.com/AeMecha/Aletheia/releases): [Windows setup](https://github.com/AeMecha/Aletheia/releases/download/v0.2.1/Aletheia-Setup-0.2.1.exe) or [Ubuntu/Debian amd64](https://github.com/AeMecha/Aletheia/releases/download/v0.2.1/Aletheia-0.2.1-linux-amd64.deb). Each release includes the corresponding source archive and SHA-256 checksums.
 
 This repository contains the application source. The build commands below create installers in `dist/`; user profiles and Qwen weights are excluded from Git.
 
 ## Run the packaged app
 
-Run `dist/Aletheia-Setup-0.2.0.exe`, or open `dist/win-unpacked/Aletheia.exe` while keeping the entire `win-unpacked` directory together. Close a running older version before installing the update. The installer is unsigned.
+Run `dist/Aletheia-Setup-0.2.1.exe`, or open `dist/win-unpacked/Aletheia.exe` while keeping the entire `win-unpacked` directory together. Close a running older version before installing the update. The installer is unsigned.
 
 On first launch, choose a compatible instruction/chat GGUF, download the default `qwen3.8-9b-hermes-fc-tooluse.Q4_K_S.gguf` (5,487,183,744 bytes), or configure an API in Settings. The default download is verified by SHA-256 and interrupted downloads resume. User-selected GGUFs are checked as containers and then loaded by the engine; they do not have to match the default model. Subsequent launches restore the selected connection. The app ships its own GPU and CPU engines and the small search model; after model setup, built-in mode requires no network access.
 
@@ -30,10 +30,10 @@ A remote API receives the current input and retrieved excerpts. Local-model mode
 
 ## Install on Ubuntu or Debian
 
-The Linux build targets **Ubuntu 24.04+ or Debian 12+, x64/amd64** with a desktop environment and a CPU with **SSE4.2** (required by the bundled native search dependency). Download/copy `dist/Aletheia-0.2.0-linux-amd64.deb` onto that computer, open a terminal in its directory, and run:
+The Linux build targets **Ubuntu 24.04+ or Debian 12+, x64/amd64** with a desktop environment and a CPU with **SSE4.2** (required by the bundled native search dependency). Download/copy `dist/Aletheia-0.2.1-linux-amd64.deb` onto that computer, open a terminal in its directory, and run:
 
 ```sh
-sudo apt install ./Aletheia-0.2.0-linux-amd64.deb
+sudo apt install ./Aletheia-0.2.1-linux-amd64.deb
 ```
 
 Open **Aletheia** from the applications menu, or run `aletheia`. The installer supplies the desktop app, native search libraries, and both Linux inference engines. Apt installs system desktop libraries if needed. Choose a compatible GGUF, download the default Qwen, or configure an API on first launch. The model and archive do not have to live inside the installation directory.
